@@ -1,0 +1,76 @@
+import os
+import time
+import requests
+import google.generativeai as genai
+
+# ==========================================
+# CONFIGURATION & SECRETS (From GitHub Secrets)
+# ==========================================
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
+
+# Configure Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+def generate_human_tone_response(prompt_text):
+    """
+    Generates a professional, non-robotic, human-like proposal or reply 
+    using Gemini, focusing on our 3D glass-morphism structure approach.
+    """
+    system_instruction = (
+        "You are an expert digital agency representative for 'Fly Agency'. "
+        "You provide high-end web structures, SEO improvements based on competitor analysis, "
+        "and custom solutions. Never sound like a rigid robot. Keep the tone friendly, "
+        "confident, professional, and natural. Do not promise fake #1 rankings, "
+        "instead promise superior design, 3D glass-morphism layouts, and better than competitor results."
+    )
+    
+    full_prompt = f"{system_instruction}\n\nClient/Task Context:\n{prompt_text}"
+    
+    try:
+        response = model.generate_content(full_prompt)
+        return response.text.strip()
+    except Exception as e:
+        return f"Error generating content: {e}"
+
+def send_discord_message(message):
+    """
+    Sends the message to Discord via Webhook with a simulated human typing delay.
+    """
+    if not DISCORD_WEBHOOK_URL:
+        print("Discord Webhook URL not found!")
+        return
+
+    # Simulate human thinking/typing delay based on message length
+    delay = min(max(len(message) / 30, 2), 6)
+    print(f"Simulating human typing delay: {delay:.2f} seconds...")
+    time.sleep(delay)
+
+    payload = {
+        "content": message,
+        "username": "Fly Agency Assistant"
+    }
+    
+    response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
+    if response.status_code == 204:
+        print("Message successfully sent to Discord!")
+    else:
+        print(f"Failed to send message: {response.status_code}, {response.text}")
+
+if __name__ == "__main__":
+    print("Fly Agency Bot is initializing...")
+    
+    sample_client_query = (
+        "A client wants a modern web structure for their AI startup "
+        "and asked if we can beat their competitor's landing page."
+    )
+    
+    print("Generating AI response...")
+    ai_reply = generate_human_tone_response(sample_client_query)
+    
+    print("\n--- Generated Output ---")
+    print(ai_reply)
+    print("------------------------\n")
+    
+    send_discord_message(ai_reply)
